@@ -34,6 +34,7 @@ body{
   position:absolute;
   inset:0;
   z-index:1;
+  pointer-events:none;
 }
 
 .hidden{ display:none; }
@@ -76,10 +77,9 @@ button{
   <button id="no">No</button>
 </div>
 
-<!-- RESULT (IMPORTANT: OUTSIDE QUESTION) -->
+<!-- RESULT -->
 <div class="card hidden" id="result">
-  <p>Yay! I love you Deepa 💘</p>
-  <img src="https://media.tenor.com/3Z3rDBuNFGAAAAAi/hug-love.gif" alt="hug gif">
+  <h2>I love you Deepa 💘</h2>
 </div>
 
 <script>
@@ -96,7 +96,7 @@ const target = 8;
 let phase = "catching"; // catching | valentine | done
 let cryingMode = false;
 
-// create emoji
+// spawn emoji
 function spawn(){
   let emoji = "💗";
   if(phase === "done") emoji = "🌹";
@@ -113,7 +113,7 @@ function spawn(){
 
 setInterval(spawn, 700);
 
-// draw
+// draw loop
 function loop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   hearts.forEach(h=>{
@@ -126,7 +126,7 @@ function loop(){
 }
 loop();
 
-// catch
+// catch hearts
 canvas.addEventListener("click", e=>{
   hearts.forEach((h,i)=>{
     if(
