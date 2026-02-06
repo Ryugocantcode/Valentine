@@ -4,8 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catch the Falling Hearts</title>
+
 <style>
-body {
+body{
   margin:0;
   min-height:100vh;
   display:flex;
@@ -14,9 +15,10 @@ body {
   background:#ffe4e6;
   font-family:system-ui;
   overflow:hidden;
-  transition: background 0.5s;
+  transition: background 0.6s;
 }
-.card {
+
+.card{
   background:#fff;
   padding:24px;
   border-radius:20px;
@@ -25,192 +27,174 @@ body {
   width:90%;
   max-width:360px;
   position:relative;
-  z-index:1;
-  transition: transform 0.3s;
+  z-index:2;
 }
-#gameCanvas {
+
+#gameCanvas{
   position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  z-index:0;
+  inset:0;
+  z-index:1;
 }
-.hidden { display:none; }
-button {
+
+.hidden{ display:none; }
+
+button{
   padding:12px 20px;
   border-radius:999px;
   border:none;
   font-size:16px;
   margin-top:10px;
-  transition: transform 0.3s;
+  transition: transform .3s;
 }
-#yes { background:#22c55e; color:#fff; }
-#no { background:#ef4444; color:#fff; }
+
+#yes{ background:#22c55e; color:#fff; }
+#no{ background:#ef4444; color:#fff; }
 </style>
 </head>
+
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
-<!-- Catch Hearts Phase -->
+<!-- GAME -->
 <div class="card" id="game">
   <h2>Catch the Hearts 💗</h2>
-  <p>Tap hearts to catch at least 8</p>
+  <p>Catch at least 8</p>
   <p id="count">0 / 8</p>
 </div>
 
-<!-- Continue after winning -->
+<!-- CONTINUE -->
 <div class="card hidden" id="continueCard">
-  <h2>Congratulations!! 🎉</h2>
+  <h2>Congratulations 🎉</h2>
   <button id="continueBtn">Continue</button>
 </div>
 
-<!-- Valentine question -->
+<!-- QUESTION -->
 <div class="card hidden" id="question">
   <h2>Will you be my Valentine? 💖</h2>
   <button id="yes">Yes</button>
   <button id="no">No</button>
-  <div id="result" class="hidden">
-  <p>Yay! I Love you Deepa💘</p>
-  <img src="https://media.tenor.com/3Z3rDBuNFGAAAAAi/hug-love.gif" alt="hug-love gif">
 </div>
+
+<!-- RESULT (IMPORTANT: OUTSIDE QUESTION) -->
+<div class="card hidden" id="result">
+  <p>Yay! I love you Deepa 💘</p>
+  <img src="https://media.tenor.com/3Z3rDBuNFGAAAAAi/hug-love.gif" alt="hug gif">
 </div>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
 let hearts = [];
 let caught = 0;
 const target = 8;
-let gamePhase = "catching"; // catching, valentine, done
+
+let phase = "catching"; // catching | valentine | done
 let cryingMode = false;
 
-// Create a heart/emoji object
-function createHeart() {
-  const size = 50;
+// create emoji
+function spawn(){
   let emoji = "💗";
-  if(gamePhase === "done") emoji = "🌹";
+  if(phase === "done") emoji = "🌹";
   if(cryingMode) emoji = "😢";
 
   hearts.push({
-    x: Math.random()*(canvas.width-size),
-    y: -size,
-    size: size,
+    x: Math.random() * canvas.width,
+    y: -40,
+    size: 40,
     speed: 2 + Math.random()*3,
-    type: emoji
+    e: emoji
   });
 }
 
-// Draw hearts/emojis
-function drawHearts() {
+setInterval(spawn, 700);
+
+// draw
+function loop(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  hearts.forEach(h => {
-    ctx.font = h.size + "px sans-serif";
-    ctx.fillText(h.type, h.x, h.y + h.size);
+  hearts.forEach(h=>{
+    h.y += h.speed;
+    ctx.font = h.size+"px serif";
+    ctx.fillText(h.e, h.x, h.y);
   });
+  hearts = hearts.filter(h=>h.y < canvas.height+50);
+  requestAnimationFrame(loop);
 }
+loop();
 
-// Update hearts position
-function updateHearts() {
-  hearts.forEach(h => { h.y += h.speed; });
-  hearts = hearts.filter(h => h.y < canvas.height + 50);
-}
-
-// Spawn hearts periodically
-setInterval(createHeart, 700);
-
-// Game loop
-function gameLoop() {
-  drawHearts();
-  updateHearts();
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();
-
-// Handle tap/click to catch hearts
-canvas.addEventListener('touchstart', catchHeart);
-canvas.addEventListener('click', catchHeart);
-
-function catchHeart(e) {
-  const touch = e.touches ? e.touches[0] : e;
-  const x = touch.clientX;
-  const y = touch.clientY;
-
-  hearts.forEach((h, i) => {
-    if(x > h.x && x < h.x + h.size && y > h.y && y < h.y + h.size){
-      if(gamePhase === "catching"){
+// catch
+canvas.addEventListener("click", e=>{
+  hearts.forEach((h,i)=>{
+    if(
+      e.clientX > h.x &&
+      e.clientX < h.x+h.size &&
+      e.clientY > h.y-h.size &&
+      e.clientY < h.y
+    ){
+      if(phase==="catching"){
         caught++;
-        document.getElementById('count').textContent = caught + " / " + target;
+        document.getElementById("count").textContent = `${caught} / ${target}`;
         hearts.splice(i,1);
-        if(caught >= target){
-          document.getElementById('game').classList.add('hidden');
-          document.getElementById('continueCard').classList.remove('hidden');
-          gamePhase = "valentine";
+
+        if(caught>=target){
+          phase="valentine";
+          document.getElementById("game").classList.add("hidden");
+          document.getElementById("continueCard").classList.remove("hidden");
         }
-      } else {
-        hearts.splice(i,1); // remove without counting
       }
     }
   });
-}
+});
 
-// Continue button
-document.getElementById('continueBtn').onclick = () => {
-  document.getElementById('continueCard').classList.add('hidden');
-  document.getElementById('question').classList.remove('hidden');
-}
+// continue
+document.getElementById("continueBtn").onclick=()=>{
+  document.getElementById("continueCard").classList.add("hidden");
+  document.getElementById("question").classList.remove("hidden");
+};
 
-// Yes button
-const yesBtn = document.getElementById('yes');
-document.getElementById('yes').onclick = () => {
-  gamePhase = "done";
-  cryingMode = false;
-  document.getElementById('question').classList.add('hidden');
-  document.getElementById('result').classList.remove('hidden');
-}
+// yes
+document.getElementById("yes").onclick=()=>{
+  phase="done";
+  cryingMode=false;
+  document.getElementById("question").classList.add("hidden");
+  document.getElementById("result").classList.remove("hidden");
+};
 
-// No button
-const noBtn = document.getElementById('no');
-noBtn.addEventListener('click', () => {
-  // Change background to gloomy
-  document.body.style.background = "linear-gradient(to bottom, #2c3e50, #34495e, #7f8c8d)";
-  
-  // Enlarge Yes temporarily
-  yesBtn.style.transform = "scale(1.3)";
-  setTimeout(()=> yesBtn.style.transform = "", 500);
+// no
+const noBtn = document.getElementById("no");
+const yesBtn = document.getElementById("yes");
 
-  // Shake No button repeatedly
-  let shakes = 0;
-  const maxShakes = 12;
-  const shakeInterval = setInterval(() => {
-    const dx = Math.random()*60-30;
-    const dy = Math.random()*60-30;
-    const rotate = Math.random()*30-15;
-    noBtn.style.transform = `translate(${dx}px, ${dy}px) rotate(${rotate}deg)`;
-    shakes++;
-    if(shakes > maxShakes){
-      clearInterval(shakeInterval);
-      noBtn.style.transform = '';
+noBtn.onclick=()=>{
+  document.body.style.background =
+    "linear-gradient(#1e293b,#334155,#020617)";
+
+  cryingMode=true;
+
+  yesBtn.style.transform="scale(1.4)";
+  setTimeout(()=>yesBtn.style.transform="",400);
+
+  let n=0;
+  const shake=setInterval(()=>{
+    noBtn.style.transform =
+      `translate(${Math.random()*60-30}px,${Math.random()*60-30}px)
+       rotate(${Math.random()*30-15}deg)`;
+    n++;
+    if(n>10){
+      clearInterval(shake);
+      noBtn.style.transform="";
     }
-  }, 80);
+  },80);
+};
 
-  // Switch hearts to crying emojis
-  cryingMode = true;
-});
-
-// Resize canvas
-window.addEventListener('resize', ()=>{
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
+onresize=()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
+};
 </script>
 
 </body>
 </html>
-
-
-
